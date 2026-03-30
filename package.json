@@ -14,7 +14,6 @@
   "build": {
     "appId": "com.hosseinsadeghi.claude-usage-widget",
     "productName": "Claude Usage Widget",
-    "copyright": "Copyright 2026 Hossein Sadeghi",
     "publish": {
       "provider": "github",
       "owner": "hosseinsadeghi",
@@ -22,8 +21,6 @@
     },
     "win": {
       "target": "nsis",
-      "publisherName": "Hossein Sadeghi",
-      "legalTrademarks": "",
       "requestedExecutionLevel": "asInvoker"
     },
     "mac": {
@@ -53,10 +50,7 @@
     ]
   },
   "keywords": ["claude", "claude-code", "usage", "widget", "electron"],
-  "author": {
-    "name": "Hossein Sadeghi",
-    "url": "https://github.com/hosseinsadeghi"
-  },
+  "author": "hosseinsadeghi",
   "homepage": "https://github.com/hosseinsadeghi/claude-usage-widget",
   "repository": {
     "type": "git",
