@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "slug": "electron-exe",
+  "description": "Sign Windows installer and embedded executables",
+  "signing_steps": [
+    {
+      "file_name": "*.exe",
+      "signing_algorithm": "sha256"
+    }
+  ]
+}

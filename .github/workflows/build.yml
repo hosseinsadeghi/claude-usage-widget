@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build:
@@ -44,14 +45,60 @@ jobs:
             dist/*.yml
           if-no-files-found: ignore
 
-  release:
+  sign-windows:
     needs: build
     runs-on: ubuntu-latest
+    if: vars.SIGNPATH_SIGNING_POLICY_SLUG != ''
     steps:
       - uses: actions/download-artifact@v4
         with:
+          name: dist-windows-latest
           path: artifacts
-          merge-multiple: true
+
+      - uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: claude-usage-widget
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: electron-exe
+          github-artifact-id: dist-windows-latest
+          output-artifact-directory: signed
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows-signed
+          path: signed/*
+
+  release:
+    needs: [build, sign-windows]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      # Try signed Windows artifact first, fall back to unsigned
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-windows-signed
+          path: artifacts
+        continue-on-error: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-windows-latest
+          path: artifacts
+        continue-on-error: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-macos-latest
+          path: artifacts
+        continue-on-error: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-ubuntu-latest
+          path: artifacts
+        continue-on-error: true
 
       - uses: softprops/action-gh-release@v2
         with:

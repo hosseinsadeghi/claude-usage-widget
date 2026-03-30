@@ -1,6 +1,6 @@
 {
   "name": "claude-usage-widget",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Minimal always-on-top widget showing Claude Code 5-hour usage as a pie chart",
   "main": "main.js",
   "scripts": {
@@ -12,10 +12,19 @@
     "dist:linux": "electron-builder --linux"
   },
   "build": {
-    "appId": "com.claude.usage-widget",
+    "appId": "com.hosseinsadeghi.claude-usage-widget",
     "productName": "Claude Usage Widget",
+    "copyright": "Copyright 2026 Hossein Sadeghi",
+    "publish": {
+      "provider": "github",
+      "owner": "hosseinsadeghi",
+      "repo": "claude-usage-widget"
+    },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "publisherName": "Hossein Sadeghi",
+      "legalTrademarks": "",
+      "requestedExecutionLevel": "asInvoker"
     },
     "mac": {
       "target": "dmg",
@@ -30,7 +39,9 @@
       "perMachine": false,
       "createDesktopShortcut": false,
       "createStartMenuShortcut": true,
-      "shortcutName": "Claude Usage Widget"
+      "shortcutName": "Claude Usage Widget",
+      "uninstallDisplayName": "Claude Usage Widget",
+      "license": null
     },
     "files": [
       "main.js",
@@ -42,7 +53,15 @@
     ]
   },
   "keywords": ["claude", "claude-code", "usage", "widget", "electron"],
-  "author": "",
+  "author": {
+    "name": "Hossein Sadeghi",
+    "url": "https://github.com/hosseinsadeghi"
+  },
+  "homepage": "https://github.com/hosseinsadeghi/claude-usage-widget",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hosseinsadeghi/claude-usage-widget.git"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron": "^41.1.0",
