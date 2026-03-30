@@ -10,28 +10,28 @@
       }
       html,
       body {
-        width: 120px;
-        height: 120px;
         overflow: hidden;
         background: transparent;
         font-family: -apple-system, "Segoe UI", sans-serif;
         user-select: none;
-        -webkit-app-region: drag;
       }
-      .container {
+
+      /* --- Simple view (default) --- */
+      .simple {
         width: 120px;
         height: 120px;
         display: flex;
         align-items: center;
         justify-content: center;
         position: relative;
+        -webkit-app-region: drag;
       }
-      canvas {
+      .simple canvas {
         position: absolute;
         top: 0;
         left: 0;
       }
-      .label {
+      .simple .label {
         position: relative;
         z-index: 1;
         text-align: center;
@@ -61,90 +61,332 @@
       .stale-dot.visible {
         display: block;
       }
+      .toggle-btn {
+        position: absolute;
+        bottom: 6px;
+        right: 6px;
+        width: 16px;
+        height: 16px;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: #888;
+        font-size: 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        z-index: 2;
+        -webkit-app-region: no-drag;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+      .toggle-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ccc;
+      }
+
+      /* --- Advanced view --- */
+      .advanced {
+        display: none;
+        width: 160px;
+        height: 240px;
+        background: rgba(20, 20, 30, 0.92);
+        border-radius: 12px;
+        padding: 10px;
+        -webkit-app-region: drag;
+        flex-direction: column;
+        align-items: center;
+      }
+      .advanced.active {
+        display: flex;
+      }
+      .simple.hidden {
+        display: none;
+      }
+      .adv-ring-wrap {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin-bottom: 8px;
+      }
+      .adv-ring-wrap canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      .adv-ring-label {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+      }
+      .adv-ring-label .pct {
+        font-size: 18px;
+      }
+      .adv-ring-label .sub {
+        font-size: 8px;
+      }
+      .adv-stats {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+      }
+      .stat-label {
+        color: #888;
+      }
+      .stat-value {
+        color: #e8e8e8;
+        font-weight: 600;
+      }
+      .stat-bar-wrap {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 2px;
+      }
+      .stat-bar {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+      }
+      .stat-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .adv-toggle-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 16px;
+        height: 16px;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: #888;
+        font-size: 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        z-index: 2;
+        -webkit-app-region: no-drag;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+      .adv-toggle-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ccc;
+      }
     </style>
   </head>
   <body>
-    <div class="container">
+    <!-- Simple view -->
+    <div class="simple" id="simple">
       <canvas id="chart" width="120" height="120"></canvas>
       <div class="label">
         <div class="pct" id="pct">--%</div>
         <div class="sub">5h window</div>
         <div class="stale-dot" id="stale" title="Data may be stale"></div>
       </div>
+      <button class="toggle-btn" id="expandBtn" title="Show details">+</button>
     </div>
+
+    <!-- Advanced view -->
+    <div class="advanced" id="advanced">
+      <button class="adv-toggle-btn" id="collapseBtn" title="Simple view">&minus;</button>
+
+      <div class="adv-ring-wrap">
+        <canvas id="advChart" width="80" height="80"></canvas>
+        <div class="adv-ring-label">
+          <div class="pct" id="advPct">--%</div>
+          <div class="sub">5h window</div>
+        </div>
+      </div>
+
+      <div class="adv-stats">
+        <div class="stat-group">
+          <div class="stat-row">
+            <span class="stat-label">7-day usage</span>
+            <span class="stat-value" id="sevenDayPct">--%</span>
+          </div>
+          <div class="stat-bar-wrap">
+            <div class="stat-bar" id="sevenDayBar" style="width: 0%; background: #6366f1"></div>
+          </div>
+        </div>
+
+        <div class="stat-group">
+          <div class="stat-row">
+            <span class="stat-label">Context</span>
+            <span class="stat-value" id="ctxPct">--%</span>
+          </div>
+          <div class="stat-bar-wrap">
+            <div class="stat-bar" id="ctxBar" style="width: 0%; background: #8b5cf6"></div>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-label">Session cost</span>
+          <span class="stat-value" id="cost">--</span>
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-label">5h resets in</span>
+          <span class="stat-value" id="resetTime">--</span>
+        </div>
+      </div>
+    </div>
+
     <script>
       const { ipcRenderer } = require("electron");
 
+      // Elements
+      const simpleEl = document.getElementById("simple");
+      const advancedEl = document.getElementById("advanced");
+      const expandBtn = document.getElementById("expandBtn");
+      const collapseBtn = document.getElementById("collapseBtn");
+
+      // Simple view
       const canvas = document.getElementById("chart");
       const ctx = canvas.getContext("2d");
       const pctEl = document.getElementById("pct");
       const staleEl = document.getElementById("stale");
 
-      let currentPct = 0;
+      // Advanced view
+      const advCanvas = document.getElementById("advChart");
+      const advCtx = advCanvas.getContext("2d");
+      const advPctEl = document.getElementById("advPct");
+      const sevenDayPctEl = document.getElementById("sevenDayPct");
+      const sevenDayBarEl = document.getElementById("sevenDayBar");
+      const ctxPctEl = document.getElementById("ctxPct");
+      const ctxBarEl = document.getElementById("ctxBar");
+      const costEl = document.getElementById("cost");
+      const resetTimeEl = document.getElementById("resetTime");
+
+      let latestData = {};
       let lastUpdate = 0;
+      let isAdvanced = false;
 
       function getColor(pct) {
-        if (pct < 50) return "#10b981"; // green
-        if (pct < 75) return "#f59e0b"; // amber
-        return "#ef4444"; // red
+        if (pct < 50) return "#10b981";
+        if (pct < 75) return "#f59e0b";
+        return "#ef4444";
       }
 
-      function draw(pct) {
-        const w = canvas.width;
-        const h = canvas.height;
+      function drawRing(context, w, h, pct, lineWidth) {
         const cx = w / 2;
         const cy = h / 2;
-        const r = 48;
-        const lineWidth = 10;
+        const r = w / 2 - 4;
 
-        ctx.clearRect(0, 0, w, h);
+        context.clearRect(0, 0, w, h);
 
-        // Background circle (dark)
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(20, 20, 30, 0.85)";
-        ctx.fill();
+        // Background circle
+        context.beginPath();
+        context.arc(cx, cy, r, 0, Math.PI * 2);
+        context.fillStyle = "rgba(20, 20, 30, 0.85)";
+        context.fill();
 
         // Track ring
-        ctx.beginPath();
-        ctx.arc(cx, cy, r - lineWidth / 2, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(255,255,255,0.08)";
-        ctx.lineWidth = lineWidth;
-        ctx.stroke();
+        context.beginPath();
+        context.arc(cx, cy, r - lineWidth / 2, 0, Math.PI * 2);
+        context.strokeStyle = "rgba(255,255,255,0.08)";
+        context.lineWidth = lineWidth;
+        context.stroke();
 
         // Usage arc
         if (pct > 0) {
           const startAngle = -Math.PI / 2;
           const endAngle = startAngle + (pct / 100) * Math.PI * 2;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r - lineWidth / 2, startAngle, endAngle);
-          ctx.strokeStyle = getColor(pct);
-          ctx.lineWidth = lineWidth;
-          ctx.lineCap = "round";
-          ctx.stroke();
+          context.beginPath();
+          context.arc(cx, cy, r - lineWidth / 2, startAngle, endAngle);
+          context.strokeStyle = getColor(pct);
+          context.lineWidth = lineWidth;
+          context.lineCap = "round";
+          context.stroke();
         }
       }
 
-      function update(data) {
-        const pct = data.five_hour_pct ?? 0;
-        currentPct = Math.round(pct * 10) / 10;
-        lastUpdate = data.timestamp ?? Date.now() / 1000;
-
-        pctEl.textContent = `${Math.round(currentPct)}%`;
-        draw(currentPct);
+      function formatResetTime(resetsAt) {
+        if (!resetsAt) return "--";
+        const diff = resetsAt - Math.floor(Date.now() / 1000);
+        if (diff <= 0) return "now";
+        const h = Math.floor(diff / 3600);
+        const m = Math.floor((diff % 3600) / 60);
+        if (h > 0) return `${h}h ${m}m`;
+        return `${m}m`;
       }
 
-      // Check staleness every 30s
+      function formatCost(usd) {
+        if (usd == null) return "--";
+        return `$${usd.toFixed(2)}`;
+      }
+
+      function update(data) {
+        latestData = data;
+        const fiveHr = data.five_hour_pct ?? 0;
+        const rounded = Math.round(fiveHr);
+        lastUpdate = data.timestamp ?? Date.now() / 1000;
+
+        // Simple view
+        pctEl.textContent = `${rounded}%`;
+        drawRing(ctx, 120, 120, fiveHr, 10);
+
+        // Advanced view
+        advPctEl.textContent = `${rounded}%`;
+        drawRing(advCtx, 80, 80, fiveHr, 7);
+
+        const sevenDay = data.seven_day_pct ?? 0;
+        sevenDayPctEl.textContent = `${Math.round(sevenDay)}%`;
+        sevenDayBarEl.style.width = `${sevenDay}%`;
+        sevenDayBarEl.style.background = getColor(sevenDay);
+
+        const ctxPct = data.context_used_pct ?? 0;
+        ctxPctEl.textContent = `${Math.round(ctxPct)}%`;
+        ctxBarEl.style.width = `${ctxPct}%`;
+
+        costEl.textContent = formatCost(data.session_cost_usd);
+        resetTimeEl.textContent = formatResetTime(data.resets_at);
+      }
+
+      // Toggle between views
+      function toggleView() {
+        isAdvanced = !isAdvanced;
+        simpleEl.classList.toggle("hidden", isAdvanced);
+        advancedEl.classList.toggle("active", isAdvanced);
+        ipcRenderer.send("toggle-view");
+
+        // Redraw for current view
+        if (latestData.five_hour_pct != null) update(latestData);
+      }
+
+      expandBtn.addEventListener("click", toggleView);
+      collapseBtn.addEventListener("click", toggleView);
+
+      // Update reset countdown every 30s
       setInterval(() => {
         if (lastUpdate === 0) return;
         const age = Date.now() / 1000 - lastUpdate;
         staleEl.classList.toggle("visible", age > 120);
+        if (latestData.resets_at) {
+          resetTimeEl.textContent = formatResetTime(latestData.resets_at);
+        }
       }, 30000);
 
       ipcRenderer.on("usage-update", (_, data) => update(data));
 
       // Initial draw
-      draw(0);
+      drawRing(ctx, 120, 120, 0, 10);
+      drawRing(advCtx, 80, 80, 0, 7);
     </script>
   </body>
 </html>

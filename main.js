@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, screen, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
@@ -6,12 +6,13 @@ const os = require("os");
 const CLAUDE_DIR = path.join(os.homedir(), ".claude");
 const USAGE_FILE = path.join(CLAUDE_DIR, "usage-stats.json");
 const SETTINGS_FILE = path.join(CLAUDE_DIR, "settings.json");
-const SIZE = 120;
+const SIMPLE_SIZE = 120;
+const ADVANCED_SIZE = { width: 160, height: 240 };
 
 let win;
+let isAdvanced = false;
 
 function getStatusLineScriptPath() {
-  // In packaged app, statusline.sh is in resources/
   if (app.isPackaged) {
     return path.join(process.resourcesPath, "statusline.sh").replace(/\\/g, "/");
   }
@@ -28,7 +29,6 @@ function ensureStatusLineConfigured() {
       settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
     }
 
-    // Check if already configured
     if (
       settings.statusLine &&
       settings.statusLine.type === "command" &&
@@ -37,7 +37,6 @@ function ensureStatusLineConfigured() {
       return;
     }
 
-    // Warn if there's an existing different statusLine
     if (settings.statusLine && settings.statusLine.command !== command) {
       const result = dialog.showMessageBoxSync({
         type: "question",
@@ -46,13 +45,13 @@ function ensureStatusLineConfigured() {
         message:
           "Claude Code already has a status line configured. Replace it with the usage widget?",
       });
-      if (result === 1) return; // Skip
+      if (result === 1) return;
     }
 
     settings.statusLine = { type: "command", command };
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
   } catch {
-    // Settings dir might not exist yet — that's ok, widget will show --% until Claude Code runs
+    // Settings dir might not exist yet
   }
 }
 
@@ -60,10 +59,10 @@ function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
   win = new BrowserWindow({
-    width: SIZE,
-    height: SIZE,
-    x: width - SIZE - 16,
-    y: height - SIZE - 16,
+    width: SIMPLE_SIZE,
+    height: SIMPLE_SIZE,
+    x: width - SIMPLE_SIZE - 16,
+    y: height - SIMPLE_SIZE - 16,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -82,11 +81,35 @@ function createWindow() {
   });
 }
 
+ipcMain.on("toggle-view", () => {
+  if (!win) return;
+  isAdvanced = !isAdvanced;
+
+  const bounds = win.getBounds();
+
+  if (isAdvanced) {
+    // Expand downward from current position, keep right edge aligned
+    win.setBounds({
+      x: bounds.x + bounds.width - ADVANCED_SIZE.width,
+      y: bounds.y,
+      width: ADVANCED_SIZE.width,
+      height: ADVANCED_SIZE.height,
+    });
+  } else {
+    // Shrink back, keep top-right corner
+    win.setBounds({
+      x: bounds.x + bounds.width - SIMPLE_SIZE,
+      y: bounds.y,
+      width: SIMPLE_SIZE,
+      height: SIMPLE_SIZE,
+    });
+  }
+});
+
 app.whenReady().then(() => {
   ensureStatusLineConfigured();
   createWindow();
 
-  // Poll usage file and send to renderer
   setInterval(() => {
     if (!win) return;
     try {
@@ -94,7 +117,7 @@ app.whenReady().then(() => {
       const data = JSON.parse(raw);
       win.webContents.send("usage-update", data);
     } catch {
-      // File doesn't exist yet or parse error — that's ok
+      // File doesn't exist yet or parse error
     }
   }, 2000);
 });
