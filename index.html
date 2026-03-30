@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 120px;
+        height: 120px;
+        overflow: hidden;
+        background: transparent;
+        font-family: -apple-system, "Segoe UI", sans-serif;
+        user-select: none;
+        -webkit-app-region: drag;
+      }
+      .container {
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      .label {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        pointer-events: none;
+      }
+      .pct {
+        font-size: 22px;
+        font-weight: 700;
+        color: #e8e8e8;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+        line-height: 1;
+      }
+      .sub {
+        font-size: 9px;
+        color: #aaa;
+        margin-top: 2px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      }
+      .stale-dot {
+        display: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #f59e0b;
+        margin: 4px auto 0;
+      }
+      .stale-dot.visible {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <canvas id="chart" width="120" height="120"></canvas>
+      <div class="label">
+        <div class="pct" id="pct">--%</div>
+        <div class="sub">5h window</div>
+        <div class="stale-dot" id="stale" title="Data may be stale"></div>
+      </div>
+    </div>
+    <script>
+      const { ipcRenderer } = require("electron");
+
+      const canvas = document.getElementById("chart");
+      const ctx = canvas.getContext("2d");
+      const pctEl = document.getElementById("pct");
+      const staleEl = document.getElementById("stale");
+
+      let currentPct = 0;
+      let lastUpdate = 0;
+
+      function getColor(pct) {
+        if (pct < 50) return "#10b981"; // green
+        if (pct < 75) return "#f59e0b"; // amber
+        return "#ef4444"; // red
+      }
+
+      function draw(pct) {
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const r = 48;
+        const lineWidth = 10;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Background circle (dark)
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(20, 20, 30, 0.85)";
+        ctx.fill();
+
+        // Track ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, r - lineWidth / 2, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+
+        // Usage arc
+        if (pct > 0) {
+          const startAngle = -Math.PI / 2;
+          const endAngle = startAngle + (pct / 100) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r - lineWidth / 2, startAngle, endAngle);
+          ctx.strokeStyle = getColor(pct);
+          ctx.lineWidth = lineWidth;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        }
+      }
+
+      function update(data) {
+        const pct = data.five_hour_pct ?? 0;
+        currentPct = Math.round(pct * 10) / 10;
+        lastUpdate = data.timestamp ?? Date.now() / 1000;
+
+        pctEl.textContent = `${Math.round(currentPct)}%`;
+        draw(currentPct);
+      }
+
+      // Check staleness every 30s
+      setInterval(() => {
+        if (lastUpdate === 0) return;
+        const age = Date.now() / 1000 - lastUpdate;
+        staleEl.classList.toggle("visible", age > 120);
+      }, 30000);
+
+      ipcRenderer.on("usage-update", (_, data) => update(data));
+
+      // Initial draw
+      draw(0);
+    </script>
+  </body>
+</html>

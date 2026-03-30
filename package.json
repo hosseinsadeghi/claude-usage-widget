@@ -1,0 +1,51 @@
+{
+  "name": "claude-usage-widget",
+  "version": "1.0.0",
+  "description": "Minimal always-on-top widget showing Claude Code 5-hour usage as a pie chart",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test-data": "node write-test-data.js",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.claude.usage-widget",
+    "productName": "Claude Usage Widget",
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Claude Usage Widget"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "statusline.sh"
+    ],
+    "extraResources": [
+      "statusline.sh"
+    ]
+  },
+  "keywords": ["claude", "claude-code", "usage", "widget", "electron"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^41.1.0",
+    "electron-builder": "^26.8.1"
+  }
+}
