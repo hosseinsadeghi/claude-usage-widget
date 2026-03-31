@@ -106,20 +106,23 @@ ipcMain.on("toggle-view", () => {
   }
 });
 
+function sendUsageUpdate() {
+  if (!win) return;
+  try {
+    const raw = fs.readFileSync(USAGE_FILE, "utf-8");
+    const data = JSON.parse(raw);
+    win.webContents.send("usage-update", data);
+  } catch {
+    // File doesn't exist yet or parse error
+  }
+}
+
+ipcMain.on("refresh", sendUsageUpdate);
+
 app.whenReady().then(() => {
   ensureStatusLineConfigured();
   createWindow();
-
-  setInterval(() => {
-    if (!win) return;
-    try {
-      const raw = fs.readFileSync(USAGE_FILE, "utf-8");
-      const data = JSON.parse(raw);
-      win.webContents.send("usage-update", data);
-    } catch {
-      // File doesn't exist yet or parse error
-    }
-  }, 2000);
+  setInterval(sendUsageUpdate, 2000);
 });
 
 app.on("window-all-closed", () => app.quit());

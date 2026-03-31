@@ -199,11 +199,13 @@
         <div class="sub" id="subLabel">5h window</div>
         <div class="stale-dot" id="stale" title="Data may be stale"></div>
       </div>
+      <button class="toggle-btn" id="refreshBtn" title="Refresh" style="right: 24px;">&#8635;</button>
       <button class="toggle-btn" id="expandBtn" title="Show details">+</button>
     </div>
 
     <!-- Advanced view -->
     <div class="advanced" id="advanced">
+      <button class="adv-toggle-btn" id="advRefreshBtn" title="Refresh" style="right: 28px;">&#8635;</button>
       <button class="adv-toggle-btn" id="collapseBtn" title="Simple view">&minus;</button>
 
       <div class="adv-ring-wrap">
@@ -333,7 +335,7 @@
       function formatResetShort(resetsAt) {
         if (!resetsAt) return "5h window";
         const diff = resetsAt - Math.floor(Date.now() / 1000);
-        if (diff <= 0) return "resets now";
+        if (diff <= 0) return "5h window";
         const h = Math.floor(diff / 3600);
         const m = Math.floor((diff % 3600) / 60);
         const s = diff % 60;
@@ -391,6 +393,11 @@
 
       expandBtn.addEventListener("click", toggleView);
       collapseBtn.addEventListener("click", toggleView);
+
+      const refreshBtn = document.getElementById("refreshBtn");
+      const advRefreshBtn = document.getElementById("advRefreshBtn");
+      refreshBtn.addEventListener("click", () => ipcRenderer.send("refresh"));
+      advRefreshBtn.addEventListener("click", () => ipcRenderer.send("refresh"));
 
       // Live countdown every second
       setInterval(() => {

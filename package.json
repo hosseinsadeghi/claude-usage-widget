@@ -1,6 +1,6 @@
 {
   "name": "claude-usage-widget",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Minimal always-on-top widget showing Claude Code 5-hour usage as a pie chart",
   "main": "main.js",
   "scripts": {
